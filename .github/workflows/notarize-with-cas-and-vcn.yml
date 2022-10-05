@@ -2,22 +2,6 @@ name: Notarize repository with cas and vcn
 
 on:
   workflow_call:
-    inputs:
-      notarize-with-cas:
-        description: 'Whether to notarize with cas or not.'
-        required: false
-        type: boolean
-        default: true
-      notarize-git-with-vcn:
-        description: 'Whether to notarize the repository with vcn or not.'
-        required: false
-        type: boolean
-        default: true
-      notarize-files-with-vcn:
-        description: 'Whether to notarize all the files in the repository with vcn or not.'
-        required: false
-        type: boolean
-        default: true
     secrets:
       cas-api-key:
         description: 'The signer key for cas.'
@@ -39,7 +23,6 @@ jobs:
         uses: actions/checkout@v2
 
   notarize-with-cas:
-    if: ${{ inputs.notarize-with-cas }}
     name: Notarize repository with cas
     runs-on: [self-hosted, linux]
     needs: checkout-repository
@@ -61,7 +44,7 @@ jobs:
           curl -s -o cas -L https://github.com/codenotary/cas/releases/download/${{ steps.cas-version.outputs.latest }}/cas-${{ steps.cas-version.outputs.latest }}-linux-amd64-static
           chmod +x cas
 
-      # Notarize only repository as cas cannot notarize all files recursively
+      # Notarize only repository as cas cannot notarize the directory
       - name: Notarize git repository with cas
         run: ./cas n git://$GITHUB_WORKSPACE
 
@@ -79,10 +62,7 @@ jobs:
           chmod +x vcn
 
       - name: Notarize git repository with vcn
-        if: ${{ inputs.notarize-git-with-vcn }}
         run: ./vcn n git://$GITHUB_WORKSPACE --bom
 
-      - name: Notarize all files in git repository with vcn
-        if: ${{ inputs.notarize-files-with-vcn }}
-        run: >
-          ./vcn n wildcard://$GITHUB_WORKSPACE/"*" -r
+      - name: Notarize git repository directory with vcn
+        run: ./vcn n dir://$GITHUB_WORKSPACE
