@@ -1,0 +1,95 @@
+name: Notarize repository with cas and vcn
+
+on:
+  workflow_call:
+    inputs:
+      cas-api-key:
+        description: 'The signer key for cas.'
+        required: true
+        type: string
+      cas-host:
+        description: 'The host for cas.'
+        required: false
+        type: string
+        default: cas.codenotary.com
+      vcn-api-key:
+        description: 'The signer key for vcn.'
+        required: true
+        type: string
+      vcn-host:
+        description: 'The host for vcn.'
+        required: true
+        type: string
+      notarize-with-cas:
+        description: 'Whether to notarize with cas or not.'
+        required: false
+        type: boolean
+        default: true
+      notarize-git-with-vcn:
+        description: 'Whether to notarize the repository with vcn or not.'
+        required: false
+        type: boolean
+        default: true
+      notarize-files-with-vcn:
+        description: 'Whether to notarize all the files in the repository with vcn or not.'
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  checkout-repository:
+    name: Checkout repository
+    if: github.event.pull_request.merged == true
+    runs-on: [self-hosted, linux]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+  notarize-with-cas:
+    if: inputs.notarize-with-cas
+    name: Notarize repository with cas
+    runs-on: [self-hosted, linux]
+    needs: checkout-repository
+    env:
+      CAS_HOST: ${{ inputs.cas-host }}
+      CAS_API_KEY: ${{ inputs.cas-api-key }}
+    steps:
+      - name: Get latest released cas version
+        id: cas-version
+        run: >
+          echo "::set-output name=latest::$(
+          curl -s -H 'Accept: application/vnd.github+json'
+          -H 'Authorization: token ${{ secrets.GITHUB_TOKEN }}'
+          https://api.github.com/repos/codenotary/cas/releases/latest | jq -r '.name'
+          )"
+
+      - name: Download cas
+        run: |
+          curl -s -o cas -L https://github.com/codenotary/cas/releases/download/${{ steps.cas-version.outputs.latest }}/cas-${{ steps.cas-version.outputs.latest }}-linux-amd64-static
+          chmod +x cas
+
+      # Notarize only repository as cas cannot notarize all files recursively
+      - name: Notarize git repository with cas
+        run: ./cas n git://$GITHUB_WORKSPACE
+
+  notarize-with-vcn:
+    name: Notarize repository with vcn
+    runs-on: [self-hosted, linux]
+    needs: checkout-repository
+    env:
+      VCN_LC_HOST: ${{ inputs.vcn-host }}
+      VCN_LC_API_KEY: ${{ inputs.vcn-api-key }}
+    steps:
+      - name: Download vcn
+        run: |
+          curl -s -o vcn -L https://vcn-releases.codenotary.com/vcn-latest-linux-amd64-static
+          chmod +x vcn
+
+      - name: Notarize git repository with vcn
+        if: notarize-git-with-vcn
+        run: ./vcn n git://$GITHUB_WORKSPACE --bom
+
+      - name: Notarize all files in git repository with vcn
+        if: notarize-files-with-vcn
+        run: >
+          ./vcn n wildcard://$GITHUB_WORKSPACE/"*" -r
