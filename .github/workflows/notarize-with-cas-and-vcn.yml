@@ -3,23 +3,6 @@ name: Notarize repository with cas and vcn
 on:
   workflow_call:
     inputs:
-      cas-api-key:
-        description: 'The signer key for cas.'
-        required: true
-        type: string
-      cas-host:
-        description: 'The host for cas.'
-        required: false
-        type: string
-        default: cas.codenotary.com
-      vcn-api-key:
-        description: 'The signer key for vcn.'
-        required: true
-        type: string
-      vcn-host:
-        description: 'The host for vcn.'
-        required: true
-        type: string
       notarize-with-cas:
         description: 'Whether to notarize with cas or not.'
         required: false
@@ -35,6 +18,16 @@ on:
         required: false
         type: boolean
         default: true
+    secrets:
+      cas-api-key:
+        description: 'The signer key for cas.'
+        required: true
+      vcn-api-key:
+        description: 'The signer key for vcn.'
+        required: true
+      vcn-host:
+        description: 'The host for vcn.'
+        required: true
 
 jobs:
   checkout-repository:
@@ -51,8 +44,8 @@ jobs:
     runs-on: [self-hosted, linux]
     needs: checkout-repository
     env:
-      CAS_HOST: ${{ inputs.cas-host }}
-      CAS_API_KEY: ${{ inputs.cas-api-key }}
+      CAS_HOST: ${{ secrets.cas-host }}
+      CAS_API_KEY: ${{ secrets.cas-api-key }}
     steps:
       - name: Get latest released cas version
         id: cas-version
@@ -77,8 +70,8 @@ jobs:
     runs-on: [self-hosted, linux]
     needs: checkout-repository
     env:
-      VCN_LC_HOST: ${{ inputs.vcn-host }}
-      VCN_LC_API_KEY: ${{ inputs.vcn-api-key }}
+      VCN_LC_HOST: ${{ secrets.vcn-host }}
+      VCN_LC_API_KEY: ${{ secrets.vcn-api-key }}
     steps:
       - name: Download vcn
         run: |
