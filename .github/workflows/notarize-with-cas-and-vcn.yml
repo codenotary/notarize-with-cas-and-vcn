@@ -44,7 +44,7 @@ jobs:
     runs-on: [self-hosted, linux]
     needs: checkout-repository
     env:
-      CAS_HOST: ${{ secrets.cas-host }}
+      CAS_HOST: cas.codenotary.com
       CAS_API_KEY: ${{ secrets.cas-api-key }}
     steps:
       - name: Get latest released cas version
