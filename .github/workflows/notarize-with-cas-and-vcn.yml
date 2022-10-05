@@ -79,10 +79,10 @@ jobs:
           chmod +x vcn
 
       - name: Notarize git repository with vcn
-        if: ${{ notarize-git-with-vcn }}
+        if: ${{ inputs.notarize-git-with-vcn }}
         run: ./vcn n git://$GITHUB_WORKSPACE --bom
 
       - name: Notarize all files in git repository with vcn
-        if: ${{ notarize-files-with-vcn }}
+        if: ${{ inputs.notarize-files-with-vcn }}
         run: >
           ./vcn n wildcard://$GITHUB_WORKSPACE/"*" -r
