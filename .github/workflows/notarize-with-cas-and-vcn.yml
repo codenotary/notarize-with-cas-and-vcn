@@ -16,7 +16,6 @@ on:
 jobs:
   checkout-repository:
     name: Checkout repository
-    if: github.event.pull_request.merged == true
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
