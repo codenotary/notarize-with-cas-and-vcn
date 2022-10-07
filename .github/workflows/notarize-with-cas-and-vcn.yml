@@ -17,14 +17,12 @@ jobs:
   checkout-repository:
     name: Checkout repository
     if: github.event.pull_request.merged == true
-    runs-on: [self-hosted, linux]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
 
   notarize-with-cas:
     name: Notarize repository with cas
-    runs-on: [self-hosted, linux]
     needs: checkout-repository
     env:
       CAS_HOST: cas.codenotary.com
@@ -50,7 +48,6 @@ jobs:
 
   notarize-with-vcn:
     name: Notarize repository with vcn
-    runs-on: [self-hosted, linux]
     needs: checkout-repository
     env:
       VCN_LC_HOST: ${{ secrets.vcn-host }}
