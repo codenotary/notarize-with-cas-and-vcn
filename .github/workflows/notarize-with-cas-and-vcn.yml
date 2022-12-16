@@ -14,21 +14,18 @@ on:
         required: true
 
 jobs:
-  checkout-repository:
-    name: Checkout repository
+  notarize-repository:
+    name: Notarize repository
     runs-on: [self-hosted, linux]
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-  notarize-with-cas:
-    name: Notarize repository with cas
-    runs-on: [self-hosted, linux]
-    needs: checkout-repository
     env:
       CAS_HOST: cas.codenotary.com
       CAS_API_KEY: ${{ secrets.cas-api-key }}
+      VCN_LC_HOST: ${{ secrets.vcn-host }}
+      VCN_LC_API_KEY: ${{ secrets.vcn-api-key }}
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
       - name: Get latest released cas version
         id: cas-version
         run: >
@@ -47,14 +44,6 @@ jobs:
       - name: Notarize git repository with cas
         run: ./cas n git://$GITHUB_WORKSPACE
 
-  notarize-with-vcn:
-    name: Notarize repository with vcn
-    runs-on: [self-hosted, linux]
-    needs: checkout-repository
-    env:
-      VCN_LC_HOST: ${{ secrets.vcn-host }}
-      VCN_LC_API_KEY: ${{ secrets.vcn-api-key }}
-    steps:
       - name: Download vcn
         run: |
           curl -s -o vcn -L https://vcn-releases.codenotary.com/vcn-latest-linux-amd64-static
